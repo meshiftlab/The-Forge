@@ -339,3 +339,5 @@ bool fsCreateDirectory(const ResourceDirectory resourceDir, const char* path, bo
 
     return create_directories(directoryPath, recursive);
 }
+
+

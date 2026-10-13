@@ -108,23 +108,11 @@ static inline size_t tf_mem_hash_uint8_t(const uint8_t* mem, size_t size, size_t
 
 #include "VulkanCapsBuilder.h"
 
-#if defined(VK_USE_DISPATCH_TABLES)
-#include "../../../Common_3/Graphics/ThirdParty/OpenSource/volk/volkForgeExt.h"
-#endif
-
-#if defined(QUEST_VR)
-#include "../Quest/OpenXRVulkan.h"
-#endif
-
 #if defined(GFX_ENABLE_SWAPPY)
 #include "swappy/swappyVk.h"
 #endif
 
 #include "../../Utilities/Interfaces/IMemory.h"
-
-#if defined(AUTOMATED_TESTING)
-#include "../../Application/Interfaces/IScreenshot.h"
-#endif
 
 extern void vk_addRaytracingPipeline(const PipelineDesc*, Pipeline**);
 extern void vk_FillRaytracingDescriptorData(AccelerationStructure* ppAccelerationStructures, VkAccelerationStructureKHR* pOutHandle);
@@ -3643,16 +3631,6 @@ static bool SelectBestGpu(Renderer* pRenderer)
     }
 
     // If we don't own the instance or device, then we need to set the gpuIndex to the correct physical device
-#if defined(VK_USE_DISPATCH_TABLES)
-    gpuIndex = UINT32_MAX;
-    for (uint32_t i = 0; i < gpuCount; i++)
-    {
-        if (gpus[i] == pRenderer->pGpu->mVk.pGpu)
-        {
-            gpuIndex = i;
-        }
-    }
-#endif
     ASSERT(gpuIndex < pRenderer->pContext->mGpuCount);
     ASSERT(gpuIndex != UINT32_MAX);
     pRenderer->pGpu = &pRenderer->pContext->mGpus[gpuIndex];
@@ -3836,7 +3814,6 @@ static bool AddDevice(const RendererDesc* pDesc, Renderer* pRenderer)
         arrfree(wantedDeviceExtensions);
     }
 
-#if !defined(VK_USE_DISPATCH_TABLES)
     //-V:ADD_TO_NEXT_CHAIN:506, 1027
 #define ADD_TO_NEXT_CHAIN(condition, next)        \
     if ((condition))                              \
@@ -3995,8 +3972,6 @@ static bool AddDevice(const RendererDesc* pDesc, Renderer* pRenderer)
     {
         volkLoadDevice(pRenderer->mVk.pDevice);
     }
-#endif
-
     if (pGpu->mDedicatedAllocationExtension)
     {
         LOGF(eINFO, "Successfully loaded Dedicated Allocation extension");
@@ -4126,14 +4101,6 @@ void initRendererContext(const char* appName, const RendererContextDesc* pDesc, 
         nvapiPrintDriverInfo();
     }
 
-#if defined(VK_USE_DISPATCH_TABLES)
-    VkResult vkRes = volkInitializeWithDispatchTables(pRenderer);
-    if (vkRes != VK_SUCCESS)
-    {
-        LOGF(eERROR, "Failed to initialize Vulkan");
-        return false;
-    }
-#else
     const char** instanceLayers = (const char**)alloca((2 + pDesc->mVk.mInstanceLayerCount) * sizeof(char*));
     uint32_t instanceLayerCount = 0;
 
@@ -4162,8 +4129,6 @@ void initRendererContext(const char* appName, const RendererContextDesc* pDesc, 
     }
 
     CreateInstance(appName, pDesc, instanceLayerCount, instanceLayers, pContext);
-#endif
-
     uint32_t gpuCount = 0;
     CHECK_VKRESULT_INSTANCE(vkEnumeratePhysicalDevices(pContext->mVk.pInstance, &gpuCount, NULL));
     gpuCount = MIN((uint32_t)MAX_MULTIPLE_GPUS, gpuCount);
@@ -4241,9 +4206,7 @@ void exitRendererContext(RendererContext* pContext)
     agsExit();
     nvapiExit();
 
-#if !defined(VK_USE_DISPATCH_TABLES)
     RemoveInstance(pContext);
-#endif
 
 #if defined(GFX_DRIVER_MEMORY_TRACKING)
     memset(&gDriverMemStats, 0, sizeof(DriverMemoryStats));
@@ -4483,13 +4446,11 @@ void initRenderer(const char* appName, const RendererDesc* pDesc, Renderer** ppR
     {
         vmaDestroyAllocator(pRenderer->mVk.pVmaAllocator);
         SAFE_FREE(pRenderer->pName);
-#if !defined(VK_USE_DISPATCH_TABLES)
         RemoveDevice(pRenderer);
         if (pDesc->mGpuMode != GPU_MODE_UNLINKED)
             exitRendererContext(pRenderer->pContext);
         SAFE_FREE(pRenderer);
         LOGF(eERROR, "Failed to initialize VrApi Vulkan systems.");
-#endif
         *ppRenderer = NULL;
         return;
     }
@@ -4593,10 +4554,7 @@ void exitRenderer(Renderer* pRenderer)
     // Destroy the Vulkan bits
     vmaDestroyAllocator(pRenderer->mVk.pVmaAllocator);
 
-#if defined(VK_USE_DISPATCH_TABLES)
-#else
     RemoveDevice(pRenderer);
-#endif
     if (pRenderer->mOwnsContext)
     {
         exitRendererContext(pRenderer->pContext);
@@ -5201,9 +5159,6 @@ void addSwapChain(Renderer* pRenderer, const SwapChainDesc* pDesc, SwapChain** p
         .clipped = VK_TRUE,
         .oldSwapchain = 0,
     };
-#ifdef AUTOMATED_TESTING
-    swapChainCreateInfo.imageUsage |= VK_IMAGE_USAGE_SAMPLED_BIT;
-#endif
     CHECK_VKRESULT(vkCreateSwapchainKHR(pRenderer->mVk.pDevice, &swapChainCreateInfo, GetAllocationCallbacks(VK_OBJECT_TYPE_SWAPCHAIN_KHR),
                                         &vkSwapchain));
     ((SwapChainDesc*)pDesc)->mColorFormat = TinyImageFormat_FromVkFormat((TinyImageFormat_VkFormat)surfaceFormat.format);
@@ -5212,14 +5167,17 @@ void addSwapChain(Renderer* pRenderer, const SwapChainDesc* pDesc, SwapChain** p
     if (gSwappyEnabled)
     {
         // Setup Swappy
-        // AndroidWindow.cpp, used to retrieve the Java activity
-        extern WindowDesc gWindow;
-        uint64_t          refreshDuration;
+        // The embedded renderer has no application-owned global window. Use the
+        // handle supplied for this swap chain to retrieve the Java activity.
+        WindowDesc androidWindow = { 0 };
+        androidWindow.handle = pDesc->mWindowHandle;
+
+        uint64_t refreshDuration;
 
         JNIEnv* pJavaEnv = NULL;
-        AndroidAttachToCurrentThread(&gWindow, &pJavaEnv);
+        AndroidAttachToCurrentThread(&androidWindow, &pJavaEnv);
 
-        SwappyVk_initAndGetRefreshCycleDuration(pJavaEnv, gWindow.handle.activity->clazz, pRenderer->pGpu->mVk.pGpu, pRenderer->mVk.pDevice,
+        SwappyVk_initAndGetRefreshCycleDuration(pJavaEnv, androidWindow.handle.activity->clazz, pRenderer->pGpu->mVk.pGpu, pRenderer->mVk.pDevice,
                                                 vkSwapchain, &refreshDuration);
         SwappyVk_setAutoSwapInterval(false);
         // Don't swap faster than the monitor refresh rate
@@ -8922,20 +8880,6 @@ void queuePresent(Queue* pQueue, const QueuePresentDesc* pDesc)
     if (pDesc->pSwapChain)
     {
         SwapChain* pSwapChain = pDesc->pSwapChain;
-#if defined(AUTOMATED_TESTING)
-        if (isScreenshotCaptureRequested())
-        {
-            ScreenshotDesc desc = { 0 };
-            desc.pRenderTarget = pSwapChain->ppRenderTargets[pDesc->mIndex];
-            desc.ppWaitSemaphores = pDesc->ppWaitSemaphores;
-            desc.mWaitSemaphoresCount = pDesc->mWaitSemaphoreCount;
-            desc.mColorSpace = pSwapChain->mColorSpace;
-            desc.discardAlpha = true;
-            desc.flipRedBlue = false;
-            captureScreenshot(&desc);
-        }
-#endif
-
 #if defined(QUEST_VR)
         OpenXRVKQueuePresent(pDesc);
         return;
@@ -9620,8 +9564,5 @@ void setPipelineName(Renderer* pRenderer, Pipeline* pPipeline, const char* pName
 }
 
 #include "../ThirdParty/OpenSource/volk/volk.c"
-#if defined(VK_USE_DISPATCH_TABLES)
-#include "../ThirdParty/OpenSource/volk/volkForgeExt.c"
-#endif
 
 #endif

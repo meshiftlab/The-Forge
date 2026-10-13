@@ -15,7 +15,7 @@ extern uint32_t agsGetAsicFamily(uint32_t deviceId);
 
 #include "../../../../Utilities/Interfaces/ILog.h"
 
-#if defined(_WINDOWS) && !defined(DURANGO) && defined(__cplusplus)
+#if defined(_WINDOWS) && !defined(DURANGO) && defined(__cplusplus) && !defined(THE_FORGE_DISABLE_AMDAGS)
 #include "ags_lib/inc/amd_ags.h"
 #define AMDAGS
 #else

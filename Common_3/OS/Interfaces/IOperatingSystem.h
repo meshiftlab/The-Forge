@@ -57,7 +57,9 @@ typedef uint64_t uint64;
 
 #elif defined(__linux__) && !defined(VK_USE_PLATFORM_GGP)
 #define VK_USE_PLATFORM_XLIB_KHR
+#if !defined(THE_FORGE_DISABLE_WAYLAND)
 #define VK_USE_PLATFORM_WAYLAND_KHR
+#endif
 #if defined(VK_USE_PLATFORM_XLIB_KHR) || defined(VK_USE_PLATFORM_XCB_KHR)
 #include <X11/Xutil.h>
 // X11 defines primitive types which conflict with Forge libraries

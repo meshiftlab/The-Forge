@@ -39,7 +39,9 @@
 #elif defined(__linux__) && !defined(VK_USE_PLATFORM_GGP)
 // TODO: Separate vulkan ext from choosing xlib vs xcb
 #define VK_USE_PLATFORM_XLIB_KHR // Use Xlib or Xcb as display server, defaults to Xlib
+#if !defined(THE_FORGE_DISABLE_WAYLAND)
 #define VK_USE_PLATFORM_WAYLAND_KHR
+#endif
 #elif defined(NX64)
 #define VK_USE_PLATFORM_VI_NN
 #else
@@ -116,7 +118,7 @@ extern "C"
         }                                                              \
     }
 
-#if defined(ANDROID) && !defined(QUEST_VR)
+#if defined(ANDROID) && !defined(QUEST_VR) && !defined(THE_FORGE_DISABLE_SWAPPY)
 #define GFX_ENABLE_SWAPPY
 #endif
 

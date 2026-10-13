@@ -527,6 +527,7 @@ FORGE_TOOL_API void fsGetPathFileName(const char* path, char* output)
 // MARK: - File iteration
 /************************************************************************/
 
+#if !defined(TARGET_IOS)
 bool fsGetFilesWithExtension(ResourceDirectory resourceDir, const char* subDirectory, const char* extension, char*** out, int* count)
 {
     *out = NULL;
@@ -627,6 +628,7 @@ bool fsGetFilesWithExtension(ResourceDirectory resourceDir, const char* subDirec
 
     return success;
 }
+#endif
 
 bool fsGetSubDirectories(ResourceDirectory resourceDir, const char* subDirectory, char*** out, int* count)
 {

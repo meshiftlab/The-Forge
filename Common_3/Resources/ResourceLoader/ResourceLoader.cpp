@@ -53,9 +53,6 @@
 #include "../../Utilities/ThirdParty/OpenSource/murmurhash3/MurmurHash3_32.h"
 #endif
 
-#if defined(ENABLE_FORGE_RELOAD_SHADER)
-#include "../../Tools/ReloadServer/ReloadClient.h"
-#endif
 // If facing strange gfx issues, corruption, GPU hangs, enable this for verbose logging of resource loading
 #define RESOURCE_LOADER_VERBOSE 0
 #if RESOURCE_LOADER_VERBOSE
@@ -2501,20 +2498,8 @@ void initResourceLoaderInterface(Renderer* pRenderer, ResourceLoaderDesc* pDesc)
     }
 #endif
 
-#if defined(ENABLE_FORGE_RELOAD_SHADER)
-    if (!platformInitReloadClient())
-    {
-        LOGF(eERROR, "Failed to initialize ReloadServer");
-#ifdef AUTOMATED_TESTING
-        ASSERT(false);
-#endif
-    }
-#else
-    LOGF(eWARNING, "ReloadServer is DISABLED. Shaders will not be updated dynamically on the device "
-                   "when they are recompiled while App is running. If this behaviour is desired then you can ignore this warning. "
-                   "If you want to re-enable ReloadServer you need to #define ENABLE_FORGE_RELOAD_SHADER in Application/Config.h"
-                   "This message is here to remind everyone to re-enable ReloadServer if it has been disabled for whatever reason.");
-#endif
+    // The embedded build intentionally omits The-Forge's ReloadServer tool.
+    LOGF(eWARNING, "Shader reload is disabled in the embedded The-Forge build.");
 }
 
 void exitResourceLoaderInterface(Renderer* pRenderer)

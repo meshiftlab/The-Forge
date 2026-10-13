@@ -239,11 +239,11 @@ COMPILE_ASSERT(sizeof(ssize_t) == sizeof(int64_t));
 #define _WIN32_WINNT  _WIN32_WINNT_WIN7
 
 // Whitelist of compiler versions
-#if (_MSC_VER == 1929) // VS 2019 all VC++ compilers
-#else
-#pragma message("Bad Visual Studio version: (" QUOTE(_MSC_VER) " " QUOTE(_MSC_FULL_VER) " " QUOTE(_MSC_BUILD) ").")
-#error "Bad Visual Studio version"
-#endif
+// #if (_MSC_VER == 1929) // VS 2019 all VC++ compilers
+// #else
+// #pragma message("Bad Visual Studio version: (" QUOTE(_MSC_VER) " " QUOTE(_MSC_FULL_VER) " " QUOTE(_MSC_BUILD) ").")
+// #error "Bad Visual Studio version"
+// #endif
 
 #endif
 
@@ -301,64 +301,21 @@ COMPILE_ASSERT(sizeof(ssize_t) == sizeof(int64_t));
 //// General options
 //////////////////////////////////////////////
 // #define ENABLE_MATH_CHECKS // Enables low level math library debug checks like SIMD variable alignment checks
-#define ENABLE_FORGE_SCRIPTING
+#ifndef THE_FORGE_DISABLE_RELOAD_SHADER
 #define ENABLE_FORGE_RELOAD_SHADER
-#define ENABLE_FORGE_UI
-#define ENABLE_FORGE_FONTS
-#define ENABLE_FORGE_INPUT
-#define ENABLE_FORGE_ANIMATION_DEBUG
-// #define ENABLE_FORGE_GPU_ANIMATION_DEBUG
-#define ENABLE_FORGE_MATERIALS
-#define ENABLE_ZIP_FILESYSTEM
-#define ENABLE_SCREENSHOT
-#define ENABLE_PROFILER
-#define ENABLE_MESHOPTIMIZER
-#define ENABLE_THREAD_PERFORMANCE_STATS
-// #define ENABLE_VMA_LOG // Very verbose, prints for each allocation
-
-// ENABLE_FORGE_ANDROID_SHADERC can be disabled if all shaders are compiled offline.
-// This way we also avoid to link to this library
-#define ENABLE_FORGE_ANDROID_SHADERC
-
-#if TARGET_OS_IPHONE || (defined(MAC_OS_VERSION_11_0) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_VERSION_11_0)
-// needed for GC haptics. Because we have to link CoreHaptics libs
-// Comment to avoid linking CoreHaptics and using haptics feature.
-#define ENABLE_FORGE_GC_HAPTICS
 #endif
+// The embedded build contains the renderer and optional resource loader only.
+#define ENABLE_FORGE_MATERIALS
+// #define ENABLE_VMA_LOG // Very verbose, prints for each allocation
 // Uncomment this to enable empty mounts
 // used for absolute paths
 // #define ENABLE_FS_EMPTY_MOUNT
-
-#ifdef ENABLE_PROFILER
-// Enable this if you want to have the profiler through a web browser, see PROFILE_WEBSERVER_PORT for server location
-// #define ENABLE_PROFILER_WEBSERVER
-#endif
-
-// By default the UI uses 16bit indexes, enable define below to change it to 32bits
-// #define FORGE_UI_USE_32BIT_INDEXES
-#define FORGE_UI_MAX_VERTEXES (64 * 1024)
-#define FORGE_UI_MAX_INDEXES  (128 * 1024)
-
-// For allocating space in uniform block. Must match with shader and application.
-// 804 aligns as multiple of the 67 bones used in the animation test closest to having a 64k uniform buffer
-#ifndef MAX_SKELETON_BATCHER_BLOCK_INSTANCES
-#define MAX_SKELETON_BATCHER_BLOCK_INSTANCES 804
-#endif
-
-#define VISIBILITY_BUFFER_MAX_GEOMETRY_SETS 3
-// Number of bits required to represent all geometry set values
-#define VISIBILITY_BUFFER_GEOMETRY_SET_BITS 2
-#define VISIBILITY_BUFFER_MAX_NUM_BUFFERS   2
 
 #if defined(AUTOMATED_TESTING)
 // Used for automated testing, the app will exit after 240 frames
 #define DEFAULT_AUTOMATION_FRAME_COUNT 240
 // Used for automated testing, emulates 60fps to ensure screenshots always look the same
 #define AUTOMATION_FIXED_FRAME_TIME    0.0167f
-#endif
-
-#if defined(TARGET_IOS) || (defined(ANDROID) && !defined(QUEST_VR)) || defined(NX64)
-#define ENABLE_FORGE_TOUCH_INPUT
 #endif
 
 //////////////////////////////////////////////
@@ -419,5 +376,3 @@ COMPILE_ASSERT(sizeof(ssize_t) == sizeof(int64_t));
 #error "_DEBUG and NDEBUG are defined at the same time"
 #endif
 #endif
-
-#define VR_API_OPENXR

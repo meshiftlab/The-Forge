@@ -2,7 +2,7 @@
 
 #include "../../../GraphicsConfig.h"
 
-#if defined(_WINDOWS) && !defined(DURANGO)
+#if defined(_WINDOWS) && !defined(DURANGO) && !defined(THE_FORGE_DISABLE_NVAPI)
 #include "nvapi.h"
 #define NVAPI
 #else

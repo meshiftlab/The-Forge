@@ -6,10 +6,14 @@
 	typedef const char* LPCSTR;
 	typedef struct HINSTANCE__* HINSTANCE;
 	typedef HINSTANCE HMODULE;
+	#ifndef _WINDOWS_
 	#ifdef _WIN64
-		typedef __int64 (__stdcall* FARPROC)(void);
+		typedef __int64 (__stdcall* FORGE_VOLK_FARPROC)(void);
 	#else
-		typedef int (__stdcall* FARPROC)(void);
+		typedef int (__stdcall* FORGE_VOLK_FARPROC)(void);
+	#endif
+	#else
+		typedef FARPROC FORGE_VOLK_FARPROC;
 	#endif
 #else
 #	include <dlfcn.h>
@@ -21,7 +25,7 @@ extern "C" {
 
 #ifdef _WIN32
 __declspec(dllimport) HMODULE __stdcall LoadLibraryA(LPCSTR);
-__declspec(dllimport) FARPROC __stdcall GetProcAddress(HMODULE, LPCSTR);
+__declspec(dllimport) FORGE_VOLK_FARPROC __stdcall GetProcAddress(HMODULE, LPCSTR);
 #endif
 
 static VkInstance loadedInstance = VK_NULL_HANDLE;

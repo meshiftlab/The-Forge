@@ -67,9 +67,6 @@
 
 #include "../../Utilities/Interfaces/IMemory.h"
 
-#if defined(AUTOMATED_TESTING)
-#include "IScreenshot.h"
-#endif
 #define MAX_BUFFER_BINDINGS            31
 // Start vertex attribute bindings at index 30 and decrement so we can bind regular buffers from index 0 for simplicity
 #define VERTEX_BINDING_OFFSET          (MAX_BUFFER_BINDINGS - 1)
@@ -2427,10 +2424,6 @@ void initRenderer(const char* appName, const RendererDesc* settings, Renderer** 
             LOGF(LogLevel::eERROR, "Office Preset is not supported by the Forge");
 
             *ppRenderer = NULL;
-#ifdef AUTOMATED_TESTING
-            // exit with success return code not to show failure on Jenkins
-            exit(0);
-#endif
             return;
         }
 
@@ -4672,9 +4665,6 @@ void acquireNextImage(Renderer* pRenderer, SwapChain* pSwapChain, Semaphore* pSi
     @autoreleasepool
     {
         CAMetalLayer* layer = (CAMetalLayer*)pSwapChain->pForgeView.layer;
-#ifdef AUTOMATED_TESTING
-        layer.framebufferOnly = !isScreenshotCaptureRequested();
-#endif
         pSwapChain->mMTKDrawable = [layer nextDrawable];
 
         pSwapChain->mIndex = (pSwapChain->mIndex + 1) % pSwapChain->mImageCount;
@@ -4803,20 +4793,6 @@ void queuePresent(Queue* pQueue, const QueuePresentDesc* pDesc)
     {
         SwapChain* pSwapChain = pDesc->pSwapChain;
         ASSERT(pQueue->pCommandQueue != nil);
-
-#if defined(AUTOMATED_TESTING)
-        if (isScreenshotCaptureRequested())
-        {
-            ScreenshotDesc desc = {};
-            desc.pRenderTarget = pSwapChain->ppRenderTargets[pDesc->mIndex];
-            desc.mColorSpace = pSwapChain->mColorSpace;
-            desc.ppWaitSemaphores = pDesc->ppWaitSemaphores;
-            desc.mWaitSemaphoresCount = pDesc->mWaitSemaphoreCount;
-            desc.flipRedBlue = false;
-            desc.discardAlpha = true;
-            captureScreenshot(&desc);
-        }
-#endif
 
         // after committing a command buffer no more commands can be encoded on it: create a new command buffer for future commands
         pSwapChain->presentCommandBuffer = [pQueue->pCommandQueue commandBuffer];
